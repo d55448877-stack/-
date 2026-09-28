@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f5ef">
+  <meta name="description" content="一個簡單好用的待辦清單，記下今天想完成的事。">
+  <title>今天要做什麼？｜待辦清單</title>
+  <style>
+    :root { color-scheme: light; --ink:#27332d; --muted:#78847b; --green:#426e55; --line:#e7e9e0; --paper:#fff; --bg:#f7f5ef; --accent:#e5ad75; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; background:var(--bg); color:var(--ink); font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif; }
+    button,input { font:inherit; }
+    button { cursor:pointer; }
+    button:focus-visible,input:focus-visible { outline:3px solid #a8c8b0; outline-offset:3px; }
+    .shell { width:min(100% - 36px,760px); margin:0 auto; padding:70px 0 65px; }
+    .eyebrow { display:flex; align-items:center; gap:9px; color:var(--green); font-size:12px; font-weight:800; letter-spacing:.2em; }
+    .eyebrow::before { content:""; width:9px; height:9px; border-radius:50%; background:var(--accent); }
+    header { display:flex; justify-content:space-between; align-items:end; gap:20px; margin:16px 0 31px; }
+    h1 { margin:0 0 11px; font-size:clamp(34px,6vw,54px); line-height:1.18; letter-spacing:-.055em; }
+    .subtitle { margin:0; color:var(--muted); font-size:15px; line-height:1.7; }
+    .date { flex:none; margin-bottom:6px; padding:10px 15px; border:1px solid #e6e8dc; border-radius:999px; color:#667568; background:#fbfaf6; font-size:13px; font-weight:650; }
+    .panel { overflow:hidden; border:1px solid #e9e8df; border-radius:24px; background:var(--paper); box-shadow:0 18px 50px #3449380b,0 2px 8px #34493805; }
+    .composer { padding:27px 29px 24px; border-bottom:1px solid var(--line); }
+    .section-label { display:block; margin-bottom:13px; color:#667568; font-size:12px; font-weight:750; letter-spacing:.08em; }
+    form { display:flex; gap:10px; }
+    #new-task { width:100%; min-width:0; height:52px; padding:0 17px; border:1px solid #dfe5dc; border-radius:12px; background:#fbfcf9; color:var(--ink); outline:none; transition:border-color .15s,box-shadow .15s; }
+    #new-task::placeholder { color:#9aa49a; }
+    #new-task:focus { border-color:#82aa8b; box-shadow:0 0 0 3px #9dc3a330; }
+    .add { flex:none; min-width:105px; padding:0 20px; border:0; border-radius:12px; background:var(--green); color:#fff; font-weight:750; transition:background .15s,transform .15s; }
+    .add:hover { background:#315b43; transform:translateY(-1px); }
+    .toolbar { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; padding:21px 29px 17px; }
+    .progress { font-size:14px; font-weight:750; }
+    .progress span { color:var(--green); }
+    .filters { display:flex; gap:4px; padding:4px; border-radius:10px; background:#f5f6f1; }
+    .filter { padding:7px 12px; border:0; border-radius:7px; background:transparent; color:#78847b; font-size:13px; font-weight:650; }
+    .filter:hover { color:var(--ink); }
+    .filter[aria-pressed="true"] { background:#fff; color:var(--green); box-shadow:0 1px 5px #26392712; }
+    .list { list-style:none; margin:0; padding:0 29px; }
+    .task { display:flex; align-items:center; gap:14px; min-height:70px; padding:13px 2px; border-top:1px solid #f0f1eb; }
+    .check { display:grid; place-items:center; flex:none; width:25px; height:25px; padding:0; border:2px solid #b9c7b9; border-radius:8px; background:#fff; color:#fff; transition:background .15s,border-color .15s; }
+    .check:hover { border-color:var(--green); }
+    .task.done .check { border-color:var(--green); background:var(--green); }
+    .check svg { width:15px; height:15px; opacity:0; }
+    .task.done .check svg { opacity:1; }
+    .task-text { min-width:0; flex:1; overflow-wrap:anywhere; font-size:15px; line-height:1.5; }
+    .task.done .task-text { color:#99a29a; text-decoration:line-through; }
+    .delete { display:grid; place-items:center; flex:none; width:34px; height:34px; border:0; border-radius:9px; background:transparent; color:#a0aaa0; }
+    .delete:hover { background:#fff1ed; color:#b45f50; }
+    .delete svg { width:18px; height:18px; }
+    .empty { padding:45px 20px 53px; text-align:center; }
+    .empty-icon { display:grid; place-items:center; width:54px; height:54px; margin:0 auto 16px; border-radius:17px; background:#edf3e9; color:var(--green); font-size:27px; }
+    .empty h2 { margin:0 0 7px; font-size:17px; }
+    .empty p { margin:0; color:var(--muted); font-size:14px; }
+    .footer { display:flex; justify-content:space-between; align-items:center; gap:15px; min-height:58px; padding:13px 29px; border-top:1px solid var(--line); color:#98a197; font-size:12px; }
+    .clear { padding:5px 0; border:0; background:transparent; color:#77877a; font-size:12px; font-weight:650; }
+    .clear:hover { color:#b45f50; text-decoration:underline; }
+    .clear:disabled { opacity:.4; cursor:default; text-decoration:none; }
+    .storage-note { margin:19px 0 0; color:#9aa198; text-align:center; font-size:12px; line-height:1.6; }
+    @media (max-width:600px) { .shell { width:min(100% - 28px,760px); padding:45px 0; } header { display:block; } .date { display:inline-block; margin-top:21px; } .composer { padding:23px 19px; } .toolbar { padding:19px 19px 16px; } .list { padding:0 19px; } .footer { padding:13px 19px; } }
+    @media (max-width:400px) { form { gap:7px; } .add { min-width:80px; padding:0 10px; } .filter { padding:7px 10px; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="eyebrow">MY LITTLE LIST</div>
+    <header>
+      <div><h1>今天要做什麼？</h1><p class="subtitle">把腦袋裡的事寫下來，一件一件慢慢完成。</p></div>
+      <time class="date" id="today"></time>
+    </header>
+    <section class="panel" aria-label="待辦清單">
+      <div class="composer">
+        <label class="section-label" for="new-task">新增待辦事項</label>
+        <form id="task-form">
+          <input id="new-task" type="text" placeholder="例如：完成期末報告" maxlength="200" autocomplete="off" required>
+          <button class="add" type="submit">＋ 新增</button>
+        </form>
+      </div>
+      <div class="toolbar">
+        <div class="progress" id="progress" aria-live="polite"></div>
+        <div class="filters" role="group" aria-label="篩選待辦事項">
+          <button class="filter" type="button" data-filter="all" aria-pressed="true">全部</button>
+          <button class="filter" type="button" data-filter="active" aria-pressed="false">未完成</button>
+          <button class="filter" type="button" data-filter="done" aria-pressed="false">已完成</button>
+        </div>
+      </div>
+      <ul class="list" id="task-list" aria-label="事項"></ul>
+      <div class="empty" id="empty" hidden><div class="empty-icon" aria-hidden="true">✳</div><h2 id="empty-title"></h2><p id="empty-message"></p></div>
+      <div class="footer"><span id="remaining"></span><button class="clear" id="clear-done" type="button">清除已完成</button></div>
+    </section>
+    <p class="storage-note" id="storage-note">清單會自動儲存在這台裝置的瀏覽器中。</p>
+  </main>
+  <script>
+    (() => {
+      'use strict';
+      const KEY = 'little-todo-list-v1';
+      const list = document.getElementById('task-list');
+      const empty = document.getElementById('empty');
+      const input = document.getElementById('new-task');
+      const filters = [...document.querySelectorAll('.filter')];
+      const note = document.getElementById('storage-note');
+      let filter = 'all';
+      let tasks = [];
+
+      try {
+        const saved = JSON.parse(localStorage.getItem(KEY) || '[]');
+        if (Array.isArray(saved)) {
+          tasks = saved.filter(item => item && typeof item.id === 'string' && typeof item.text === 'string' && typeof item.done === 'boolean')
+            .map(item => ({ id: item.id, text: item.text.slice(0, 200), done: item.done }));
+        }
+      } catch (_) { note.textContent = '此瀏覽器目前無法讀取已儲存的清單。'; }
+
+      function save() {
+        try { localStorage.setItem(KEY, JSON.stringify(tasks)); note.textContent = '清單會自動儲存在這台裝置的瀏覽器中。'; }
+        catch (_) { note.textContent = '無法儲存清單；請確認瀏覽器允許網站使用儲存空間。'; }
+      }
+
+      function render() {
+        const done = tasks.filter(task => task.done).length;
+        const shown = tasks.filter(task => filter === 'all' || (filter === 'done' ? task.done : !task.done));
+        document.getElementById('progress').innerHTML = '<span>' + done + '</span> / ' + tasks.length + ' 件已完成';
+        document.getElementById('remaining').textContent = '還有 ' + (tasks.length - done) + ' 件事等著你';
+        document.getElementById('clear-done').disabled = done === 0;
+        filters.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.filter === filter)));
+        list.replaceChildren();
+        shown.forEach(task => {
+          const item = document.createElement('li');
+          item.className = 'task' + (task.done ? ' done' : '');
+          const check = document.createElement('button');
+          check.type = 'button';
+          check.className = 'check';
+          check.setAttribute('aria-label', (task.done ? '標記未完成：' : '標記已完成：') + task.text);
+          check.setAttribute('aria-pressed', String(task.done));
+          check.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>';
+          check.addEventListener('click', () => { task.done = !task.done; save(); render(); });
+          const label = document.createElement('span');
+          label.className = 'task-text';
+          label.textContent = task.text;
+          const remove = document.createElement('button');
+          remove.type = 'button';
+          remove.className = 'delete';
+          remove.setAttribute('aria-label', '刪除：' + task.text);
+          remove.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 4h4m-8 3 1 13h10l1-13M10 11v6m4-6v6"/></svg>';
+          remove.addEventListener('click', () => { tasks = tasks.filter(entry => entry.id !== task.id); save(); render(); });
+          item.append(check, label, remove);
+          list.append(item);
+        });
+        empty.hidden = shown.length !== 0;
+        if (!shown.length) {
+          const message = tasks.length === 0 ? ['清單還是空的', '先寫下第一件想完成的事吧！'] :
+            filter === 'done' ? ['還沒有完成的事項', '完成一件事後，它就會出現在這裡。'] :
+            filter === 'active' ? ['所有事情都完成了！', '做得好，稍微休息一下吧。'] : ['這裡沒有事項', '新增一件待辦事項吧！'];
+          document.getElementById('empty-title').textContent = message[0];
+          document.getElementById('empty-message').textContent = message[1];
+        }
+      }
+
+      document.getElementById('task-form').addEventListener('submit', event => {
+        event.preventDefault();
+        const value = input.value.trim();
+        if (!value) { input.focus(); return; }
+        tasks.unshift({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(), text: value, done: false });
+        input.value = '';
+        filter = 'all';
+        save(); render(); input.focus();
+      });
+      filters.forEach(button => button.addEventListener('click', () => { filter = button.dataset.filter; render(); }));
+      document.getElementById('clear-done').addEventListener('click', () => { tasks = tasks.filter(task => !task.done); save(); render(); });
+      const today = new Date();
+      document.getElementById('today').dateTime = today.toISOString().slice(0, 10);
+      document.getElementById('today').textContent = new Intl.DateTimeFormat('zh-TW', { month:'long', day:'numeric', weekday:'short' }).format(today);
+      render();
+    })();
+  </script>
+</body>
+</html>
